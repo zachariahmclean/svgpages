@@ -2,6 +2,7 @@
 
 Backend-specific tests are skipped when the corresponding tool is missing.
 """
+import shutil
 from pathlib import Path
 
 import pikepdf
@@ -133,6 +134,20 @@ def test_flatten_subcommand_output_renders(tmp_path):
 
 def test_pages_subcommand():
     assert main(["pages", MASTER]) == 0
+
+
+@needs_inkscape
+@pytest.mark.skipif(shutil.which("fc-list") is None, reason="fc-list not available")
+def test_export_warns_on_missing_fonts(tmp_path, capsys):
+    svg = tmp_path / "m.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2in" height="1in" '
+        'viewBox="0 0 192 96">'
+        '<text x="10" y="50" font-family="DefinitelyNotARealFont123">hi</text></svg>'
+    )
+    rc = main(["export", "--no-flat-svg", str(svg), str(tmp_path / "o.pdf")])
+    assert rc == 2
+    assert "DefinitelyNotARealFont123" in capsys.readouterr().err
 
 
 @needs_inkscape

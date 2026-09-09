@@ -10,6 +10,8 @@ the same plotting pipeline routinely share ids.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import itertools
 import os
@@ -74,6 +76,18 @@ def _flatten_tree(tree, base_dir: Path, stack: tuple[Path, ...],
         href = image.get("href") or image.get(_XLINK_HREF)
         if not href:
             continue
+        if href.startswith("data:"):
+            child_root = _decode_data_uri_svg(href, warnings)
+            if child_root is None:
+                continue  # raster data URI, or undecodable (warned)
+            if len(stack) > max_depth:
+                raise FlattenError(f"links nested deeper than {max_depth} in a data: URI")
+            _flatten_tree(etree.ElementTree(child_root), base_dir, stack,
+                          warnings, counter, max_depth)
+            _namespace_child(child_root, _make_prefix("data", counter))
+            replacement = _inline(image, child_root, "data:image/svg+xml", warnings)
+            image.getparent().replace(image, replacement)
+            continue
         target = _resolve_svg_href(href, base_dir, warnings)
         if target is None:
             continue  # raster / data: / remote / fragment — left as-is
@@ -87,19 +101,39 @@ def _flatten_tree(tree, base_dir: Path, stack: tuple[Path, ...],
 
         child = etree.parse(str(target))
         _flatten_tree(child, target.parent, (*stack, target), warnings, counter, max_depth)
-        prefix = _make_prefix(target, counter)
+        prefix = _make_prefix(target.stem, counter)
         _namespace_child(child.getroot(), prefix)
         replacement = _inline(image, child.getroot(), href, warnings)
         image.getparent().replace(image, replacement)
+
+
+_DATA_SVG_RE = re.compile(r"data:image/svg\+xml(;[^,]*)?,", re.IGNORECASE)
+
+
+def _decode_data_uri_svg(href: str, warnings: list[str]) -> etree._Element | None:
+    """Parse an embedded SVG data: URI (base64 or URL-encoded) into an
+    element, or None if it isn't an SVG data URI / can't be decoded."""
+    m = _DATA_SVG_RE.match(href)
+    if m is None:
+        return None
+    params = (m.group(1) or "").lower()
+    payload = href[m.end():]
+    try:
+        if "base64" in params:
+            data = base64.b64decode(payload)
+        else:
+            data = urllib.parse.unquote(payload).encode()
+        return etree.fromstring(data)
+    except (ValueError, binascii.Error, etree.LxmlError) as e:
+        warnings.append(f"embedded SVG data URI left as-is (decode failed: {e})")
+        return None
 
 
 def _resolve_svg_href(href: str, base_dir: Path, warnings: list[str]) -> Path | None:
     """Return the local path of an SVG href, or None if it isn't a
     flattenable local SVG file."""
     if href.startswith("data:"):
-        if "image/svg" in href[:64]:
-            warnings.append(f"data: URI SVG left as-is (not flattened): {href[:48]}…")
-        return None
+        return None  # handled by _decode_data_uri_svg before this point
     parsed = urllib.parse.urlparse(href)
     # A one-letter "scheme" is really a Windows drive letter (C:\...).
     if parsed.scheme and len(parsed.scheme) > 1 and parsed.scheme != "file":
@@ -116,8 +150,8 @@ def _resolve_svg_href(href: str, base_dir: Path, warnings: list[str]) -> Path | 
     return p.resolve() if p.is_absolute() else (base_dir / p).resolve()
 
 
-def _make_prefix(target: Path, counter) -> str:
-    stem = re.sub(r"[^A-Za-z0-9_]+", "_", target.stem) or "svg"
+def _make_prefix(stem: str, counter) -> str:
+    stem = re.sub(r"[^A-Za-z0-9_]+", "_", stem) or "svg"
     return f"{stem}_{next(counter)}__"
 
 

@@ -67,6 +67,9 @@ the source's raster references; an excess means something got rasterized.
 ### `svgpages flatten MASTER.svg`
 
 Write a self-contained SVG with all linked SVGs inlined as vector content.
+Both file links and embedded `data:image/svg+xml` URIs (base64 or
+URL-encoded, as produced by e.g. Excalidraw or Office exports) are
+flattened; raster images pass through untouched.
 
 - `-o, --output PATH` — output path (default: `<master>.flat.svg`).
 
@@ -104,7 +107,9 @@ documents authored on Windows (e.g. using Arial) should be exported with the
 Windows Inkscape — `--inkscape "/mnt/c/Program Files/Inkscape/bin/inkscape.exe"`
 or `SVGPAGES_INKSCAPE` — so the real fonts get embedded; a Linux Inkscape
 without the font silently substitutes (metric-compatible, but the text ends
-up as outlines of the substitute).
+up as outlines of the substitute). Both `check` and `export` detect this:
+when a referenced font isn't installed locally they warn (exit `2`) and, if
+the Windows binary is reachable, print the exact flag to use.
 
 ## Install
 
@@ -116,6 +121,7 @@ pip install -e '.[test]' && pytest   # with tests
 ## Status
 
 Milestones 1–2 complete (flatten engine, Inkscape + Chrome backends,
-`pages`/`check`/`verify`, page selection, labels/metadata). Planned next
+`pages`/`check`/`verify`, page selection, labels/metadata), plus data-URI
+SVG flattening and WSL font-substitution warnings from M3. Remaining
 (M3): `--per-page-files`, in-place flatten refresh via the recorded
-`svgpages:src` provenance — see [PLAN.md](PLAN.md).
+`svgpages:src` provenance, tagged release — see [PLAN.md](PLAN.md).

@@ -346,12 +346,18 @@ def _check_fonts_installed(fonts: set[str], report: CheckReport) -> None:
         return
     missing = sorted(f for f in fonts if f.lower() not in installed)
     if missing:
+        from .render import find_windows_tool
+
+        win = find_windows_tool("inkscape")
+        hint = (
+            f' — e.g. --inkscape "{win}"' if win else
+            " (--inkscape/--chrome or SVGPAGES_INKSCAPE/SVGPAGES_CHROME)"
+        )
         report.warnings.append(
             "fonts referenced but not installed locally: "
             + ", ".join(missing)
             + " — rendering will substitute; if the document was authored "
-            "on Windows, export with the Windows Inkscape/Chrome "
-            "(--inkscape/--chrome or SVGPAGES_INKSCAPE/SVGPAGES_CHROME)"
+            "on Windows, export with the Windows Inkscape/Chrome" + hint
         )
     else:
         report.infos.append(

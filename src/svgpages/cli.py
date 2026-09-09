@@ -10,7 +10,13 @@ from pathlib import Path
 from lxml import etree
 
 from . import __version__
-from .checks import check_svg, count_expected_rasters, inspect_pdf_rasters
+from .checks import (
+    check_svg,
+    count_expected_rasters,
+    inspect_pdf_rasters,
+    installed_font_families,
+    referenced_font_families,
+)
 from .flatten import FlattenError, flatten_file, write_flattened
 from .merge import finalize_pdf, merge_page_pdfs
 from .pages import crop_to_page, get_pages, parse_page_spec
@@ -19,6 +25,7 @@ from .render import (
     export_pdf_inkscape,
     find_chrome,
     find_inkscape,
+    find_windows_tool,
     print_page_pdf_chrome,
     write_page_html,
 )
@@ -172,6 +179,8 @@ def _cmd_export(args: argparse.Namespace) -> int:
                 write_flattened(tree, flat_out, master.parent)
                 print(f"wrote {flat_out}")
 
+        _warn_missing_fonts(tree, tool, args.backend, warnings)
+
         if args.backend == "inkscape":
             raw_pdf = tempdir / "render.pdf"
             export_pdf_inkscape(tool, render_src, raw_pdf)
@@ -207,6 +216,32 @@ def _cmd_export(args: argparse.Namespace) -> int:
         else:
             shutil.rmtree(tempdir, ignore_errors=True)
     return _report_warnings(warnings)
+
+
+def _warn_missing_fonts(tree, tool: str, backend: str, warnings: list[str]) -> None:
+    """Before rendering with a local (non-Windows) tool, warn when the
+    document references fonts fontconfig doesn't know — they will be
+    silently substituted (and end up as outlines of the substitute)."""
+    if tool.lower().endswith(".exe"):
+        return  # Windows binary resolves fonts from the Windows store
+    fonts = referenced_font_families(tree.getroot())
+    if not fonts:
+        return
+    installed = installed_font_families()
+    if installed is None:
+        return
+    missing = sorted(f for f in fonts if f.lower() not in installed)
+    if not missing:
+        return
+    win = find_windows_tool(backend)
+    hint = (
+        f' — the Windows binary likely has them: --{backend} "{win}" '
+        f"or SVGPAGES_{backend.upper()}" if win else ""
+    )
+    warnings.append(
+        "fonts not installed locally will be substituted: "
+        + ", ".join(missing) + hint
+    )
 
 
 def _cmd_flatten(args: argparse.Namespace) -> int:

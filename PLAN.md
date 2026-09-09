@@ -195,6 +195,10 @@ page labels + PDF metadata. Acceptance: both backends produce
 visually-matching, vector-clean output on the fixtures.
 
 **M3 — polish and integration.**
+*(Done early: flattening of base64/URL-encoded `data:image/svg+xml` URIs —
+seen in the wild in Excalidraw/Office exports per Inkscape issue #2103 —
+and font-substitution warnings in `check`/`export` that name the exact
+Windows binary flag to use under WSL.)*
 `--per-page-files`; `flatten --in-place`/`refresh` using the recorded
 `svgpages:src` provenance (re-flatten only stale children — the "update
 linked" workflow); README documenting the `paper_figures/` workflow

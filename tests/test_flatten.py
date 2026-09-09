@@ -1,3 +1,5 @@
+import base64
+import urllib.parse
 from pathlib import Path
 
 import pytest
@@ -218,6 +220,57 @@ def test_child_editor_cruft_stripped(tmp_path):
     assert f"{SVG}rect" in tags
     assert f"{{{sodipodi}}}namedview" not in tags
     assert f"{SVG}metadata" not in tags
+
+
+_DATA_CHILD = (
+    f'<svg xmlns="{SVG_NS}" width="10" height="10" viewBox="0 0 10 10">'
+    '<defs><linearGradient id="g"/></defs>'
+    '<rect id="r" width="1" height="1" fill="url(#g)"/></svg>'
+)
+
+
+def _assert_data_uri_flattened(tree):
+    nested = next(el for el in tree.getroot().iter(f"{SVG}svg") if el.get(SRC_ATTR))
+    assert nested.get(SRC_ATTR) == "data:image/svg+xml"
+    assert nested.get("viewBox") == "0 0 10 10"
+    rect = nested.find(f"{SVG}rect")
+    assert rect.get("id").endswith("__r")
+    grad_id = nested.find(f"{SVG}defs/{SVG}linearGradient").get("id")
+    assert rect.get("fill") == f"url(#{grad_id})"
+
+
+def test_data_uri_svg_base64_flattened(tmp_path):
+    uri = "data:image/svg+xml;base64," + base64.b64encode(_DATA_CHILD.encode()).decode()
+    master = _write(
+        tmp_path / "m.svg",
+        _child_svg(f'<image x="0" y="0" width="10" height="10" href="{uri}"/>'),
+    )
+    tree, warnings = flatten_file(master)
+    assert warnings == []
+    assert not list(tree.getroot().iter(f"{SVG}image"))
+    _assert_data_uri_flattened(tree)
+
+
+def test_data_uri_svg_urlencoded_flattened(tmp_path):
+    uri = "data:image/svg+xml," + urllib.parse.quote(_DATA_CHILD)
+    master = _write(
+        tmp_path / "m.svg",
+        _child_svg(f'<image x="0" y="0" width="10" height="10" href="{uri}"/>'),
+    )
+    tree, warnings = flatten_file(master)
+    assert warnings == []
+    _assert_data_uri_flattened(tree)
+
+
+def test_undecodable_data_uri_svg_warns_and_stays(tmp_path):
+    master = _write(
+        tmp_path / "m.svg",
+        _child_svg('<image x="0" y="0" width="10" height="10" '
+                   'href="data:image/svg+xml;base64,%%%notvalid"/>'),
+    )
+    tree, warnings = flatten_file(master)
+    assert any("data URI" in w for w in warnings)
+    assert len(list(tree.getroot().iter(f"{SVG}image"))) == 1
 
 
 def test_write_flattened_rebases_raster_hrefs(tmp_path):

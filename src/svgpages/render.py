@@ -53,6 +53,21 @@ def _is_windows_exe_under_wsl(tool: str) -> bool:
     return tool.startswith("/mnt/") and tool.lower().endswith(".exe")
 
 
+_WSL_WINDOWS_TOOLS = {
+    "inkscape": "/mnt/c/Program Files/Inkscape/bin/inkscape.exe",
+    "chrome": "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
+}
+
+
+def find_windows_tool(backend: str) -> str | None:
+    """Path of the Windows binary for a backend, when reachable from WSL.
+
+    Windows binaries resolve fonts from the Windows font store — the right
+    choice for documents authored on Windows (e.g. using Arial)."""
+    path = _WSL_WINDOWS_TOOLS.get(backend)
+    return path if path and Path(path).exists() else None
+
+
 def _tool_path(tool: str, path: Path) -> str:
     """Translate a path for the tool's view of the filesystem: Windows
     binaries invoked from WSL can't read /home-style paths."""
