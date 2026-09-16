@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/c/Program Files/Google/Chrome/Application/**)",
+      "Bash(python3 -c \"import lxml, pikepdf\")",
+      "Bash(which google-chrome *)",
+      "Bash(google-chrome --version)",
+      "Bash(inkscape --version)",
+      "Bash(python3 -c \"import lxml, pikepdf; print\\('lxml', lxml.__version__ if hasattr\\(lxml,'__version__'\\) else 'ok'\\); print\\('pikepdf', pikepdf.__version__\\)\")",
+      "Bash(/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/python -c 'import pikepdf, lxml; print\\('\\\\''scratch venv deps ok'\\\\''\\)')",
+      "Bash(/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/pip -q install pytest)",
+      "Bash(PYTHONPATH=src /tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/python -m svgpages flatten tests/fixtures/master.svg -o /tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/probe/fixture_flat.svg)",
+      "Bash(inkscape /tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/probe/fixture_flat.svg --export-type=png --export-dpi=192 --export-area=0:0:280:130 --export-filename=/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/probe/fixture_flat.png)",
+      "Bash(inkscape /tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/probe/fixture_flat.svg --export-type=png --export-dpi=48 --export-area-drawing --export-background=white --export-filename=/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/probe/flat_full.png)",
+      "Bash(/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/pip -q install -e .)",
+      "Bash(/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/svgpages export *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(/tmp/claude-1000/-home-zlm2-software-svgpages/e9b41fa4-9437-4934-a7d8-0b56b218b112/scratchpad/venv/bin/python -m pytest tests/ -q)",
+      "Read(//tmp/svgpages_debug/**)",
+      "Bash(inkscape --export-type=png --export-filename=fig5_direct.png -w 900 \"/home/zlm2/Manuscripts/2026/5AM2/figs/fig5_predicted_variants/fig_5_predicted_variants.svg\")",
+      "Bash(pdftoppm -png -r 150 page5.pdf page5_from_pdf)",
+      "Bash(inkscape --pdf-page=1 --export-type=png --export-filename=page5_from_pdf.png -w 1600 page5.pdf)",
+      "Bash(cd \"/home/zlm2/Manuscripts/2026/5AM2\" && grep -n \"Expression like figure 4\\\\|Instability like figure 4\" figs/5AM2_main_figures.svg | head -5 *)",
+      "Read(//mnt/c/Users/gusella_lab/OneDrive - Mass General Brigham/Documents/Manuscripts/2026/5AM2/**)",
+      "Bash(cd \"/home/zlm2/Manuscripts/2026/5AM2\" && grep -o '<inkscape:page[^/]*/>' figs/5AM2_main_figures.svg *)",
+      "Bash(python3 -c ' *)",
+      "Bash(inkscape --export-type=png --export-filename=page5_flat_render.png -w 1600 page5.flat.svg)",
+      "Bash(inkscape --pdf-page=5 --export-type=png --export-filename=full_page5.png -w 1600 \"/home/zlm2/Manuscripts/2026/5AM2/figs/paper_figures.pdf\")",
+      "Bash(cp \"/home/zlm2/Manuscripts/2026/5AM2/figs/paper_figures.flat.svg\" full.flat.svg)",
+      "Bash(inkscape --help)",
+      "Bash(inkscape --export-page=5 --export-type=png --export-filename=full_flat_page5.png -w 1600 full.flat.svg)",
+      "Bash(inkscape --export-area=\"884:11.698048:1079.99103:68.848052\" --export-type=png --export-filename=isolated_image_region.png -w 1200 full.flat.svg)"
+    ]
+  }
+}

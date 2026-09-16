@@ -30,6 +30,7 @@ _STYLE_TAG = f"{{{SVG_NS}}}style"
 _XLINK_HREF = f"{{{XLINK_NS}}}href"
 
 _URL_REF_RE = re.compile(r"""url\(\s*['"]?#([^)'"\s]+)['"]?\s*\)""")
+_FONT_FAMILY_STYLE_RE = re.compile(r"(font-family\s*:\s*)([^;}]+)")
 
 # <image> attributes that transfer onto the nested <svg> itself
 _GEOMETRY_ATTRS = ("x", "y", "width", "height", "preserveAspectRatio")
@@ -273,6 +274,33 @@ def _synthesize_viewbox(child_root: etree._Element, href: str,
         warnings.append(f"{href}: could not parse child width/height ({w_attr!r}, {h_attr!r})")
         return None
     return f"0 0 {w_px:g} {h_px:g}"
+
+
+def force_font_family(root: etree._Element, family: str) -> int:
+    """Overwrite every font-family declaration in the tree — the
+    ``font-family`` attribute, inline ``style``, and ``<style>`` CSS text —
+    with ``family``, across the master and everything flattened into it.
+    Returns the number of declarations rewritten."""
+    quoted = f"'{family}'" if re.search(r"\s", family) else family
+    count = 0
+
+    def sub(m: re.Match) -> str:
+        nonlocal count
+        count += 1
+        return m.group(1) + quoted
+
+    for el in root.iter():
+        if not isinstance(el.tag, str):
+            continue
+        if el.get("font-family"):
+            el.set("font-family", family)
+            count += 1
+        style = el.get("style")
+        if style and _FONT_FAMILY_STYLE_RE.search(style):
+            el.set("style", _FONT_FAMILY_STYLE_RE.sub(sub, style))
+        if el.tag == _STYLE_TAG and el.text and _FONT_FAMILY_STYLE_RE.search(el.text):
+            el.text = _FONT_FAMILY_STYLE_RE.sub(sub, el.text)
+    return count
 
 
 def _rebase_relative_hrefs(tree, master_dir: Path, out_dir: Path) -> None:

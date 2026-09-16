@@ -59,6 +59,13 @@ Flatten and render a master SVG to a multi-page vector PDF.
   `SVGPAGES_CHROME`); Windows Chrome works from WSL as well.
 - `--keep-temp` — keep intermediate files (cropped pages, wrapper HTML,
   per-page PDFs) for debugging.
+- `--force-font NAME` — overwrite every `font-family` declaration (the
+  master's own text and everything flattened into it) with `NAME`. Useful
+  when figures assembled from different sources (R/svglite, hand-drawn
+  Inkscape annotations, pasted diagrams) end up with mismatched or generic
+  (`sans-serif`) fonts that each render differently depending on the
+  renderer's fallback — this makes every text element request the same
+  named font instead.
 
 Exported PDFs carry page labels from `inkscape:label` and a title from the
 master filename. After export, the PDF's raster count is verified against
@@ -72,6 +79,7 @@ URL-encoded, as produced by e.g. Excalidraw or Office exports) are
 flattened; raster images pass through untouched.
 
 - `-o, --output PATH` — output path (default: `<master>.flat.svg`).
+- `--force-font NAME` — overwrite every font-family declaration with `NAME`.
 
 ### `svgpages pages MASTER.svg`
 

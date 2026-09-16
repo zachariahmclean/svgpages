@@ -17,7 +17,7 @@ from .checks import (
     installed_font_families,
     referenced_font_families,
 )
-from .flatten import FlattenError, flatten_file, write_flattened
+from .flatten import FlattenError, flatten_file, force_font_family, write_flattened
 from .merge import finalize_pdf, merge_page_pdfs
 from .pages import crop_to_page, get_pages, parse_page_spec
 from .render import (
@@ -67,6 +67,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="skip the post-export raster check of the PDF")
     ex.add_argument("--keep-temp", action="store_true",
                     help="keep intermediate files for debugging")
+    ex.add_argument("--force-font", default=None, metavar="NAME",
+                    help="overwrite every font-family declaration (master and "
+                         "everything flattened into it) with NAME — use when "
+                         "figures from different sources leave mismatched or "
+                         "generic (e.g. 'sans-serif') fonts")
 
     fl = sub.add_parser(
         "flatten", help="write a self-contained SVG with linked SVGs inlined as vectors"
@@ -74,6 +79,8 @@ def main(argv: list[str] | None = None) -> int:
     fl.add_argument("master_svg", type=Path)
     fl.add_argument("-o", "--output", type=Path, default=None,
                     help="output path (default: <master>.flat.svg)")
+    fl.add_argument("--force-font", default=None, metavar="NAME",
+                    help="overwrite every font-family declaration with NAME")
 
     pg = sub.add_parser("pages", help="list the document's pages (dry run)")
     pg.add_argument("master_svg", type=Path)
@@ -164,6 +171,9 @@ def _cmd_export(args: argparse.Namespace) -> int:
             tree = etree.parse(str(master))
         else:
             tree, warnings = flatten_file(master)
+        if args.force_font:
+            n = force_font_family(tree.getroot(), args.force_font)
+            print(f"forced {n} font-family declaration(s) to {args.force_font!r}")
         # written (with rebased raster hrefs) even for --no-flatten, so
         # both backends can render from the tempdir with links resolving
         render_src = tempdir / f"{master.stem}_flat.svg"
@@ -253,6 +263,9 @@ def _cmd_flatten(args: argparse.Namespace) -> int:
         print("error: output would overwrite the master SVG", file=sys.stderr)
         return EXIT_ERROR
     tree, warnings = flatten_file(master)
+    if args.force_font:
+        n = force_font_family(tree.getroot(), args.force_font)
+        print(f"forced {n} font-family declaration(s) to {args.force_font!r}")
     write_flattened(tree, out, master.parent)
     print(f"wrote {out}")
     return _report_warnings(warnings)
