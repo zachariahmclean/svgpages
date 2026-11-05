@@ -201,6 +201,24 @@ def test_stylesheet_ids_and_classes_scoped(tmp_path):
     assert f"url(#{grad_id})" in style
 
 
+def test_prefix_valid_css_identifier_for_digit_stem(tmp_path):
+    _write(
+        tmp_path / "5AM1_plot.svg",
+        _child_svg('<style>.svglite rect { fill: none; }</style>'
+                   '<g class="svglite"><rect id="r" width="1" height="1"/></g>'),
+    )
+    master = _write(
+        tmp_path / "m.svg",
+        _child_svg('<image x="0" y="0" width="10" height="10" href="5AM1_plot.svg"/>'),
+    )
+    tree, _ = flatten_file(master)
+    nested = next(el for el in tree.getroot().iter(f"{SVG}svg") if el.get(SRC_ATTR))
+    cls = nested.find(f"{SVG}g").get("class")
+    assert not cls[0].isdigit()
+    assert not nested.find(f".//{SVG}rect").get("id")[0].isdigit()
+    assert f".{cls} rect" in nested.find(f"{SVG}style").text
+
+
 def test_child_editor_cruft_stripped(tmp_path):
     sodipodi = "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
     _write(
