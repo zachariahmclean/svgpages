@@ -214,8 +214,8 @@ def test_prefix_valid_css_identifier_for_digit_stem(tmp_path):
     tree, _ = flatten_file(master)
     nested = next(el for el in tree.getroot().iter(f"{SVG}svg") if el.get(SRC_ATTR))
     cls = nested.find(f"{SVG}g").get("class")
-    assert not cls[0].isdigit()
-    assert not nested.find(f".//{SVG}rect").get("id")[0].isdigit()
+    assert cls[0].isalpha()
+    assert nested.find(f".//{SVG}rect").get("id")[0].isalpha()
     assert f".{cls} rect" in nested.find(f"{SVG}style").text
 
 

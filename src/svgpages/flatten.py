@@ -154,9 +154,10 @@ def _resolve_svg_href(href: str, base_dir: Path, warnings: list[str]) -> Path | 
 def _make_prefix(stem: str, counter) -> str:
     stem = re.sub(r"[^A-Za-z0-9_]+", "_", stem) or "svg"
     # CSS class/id selectors (and XML ids) can't start with a digit; a
-    # "5AM1_…" prefix would make browsers drop the child's whole stylesheet
-    if stem[0].isdigit():
-        stem = "_" + stem
+    # "5AM1_…" prefix would make browsers drop the child's whole stylesheet.
+    # Use a letter, not "_": Inkscape's CSS2 parser rejects leading underscores
+    if not stem[0].isalpha():
+        stem = "svg_" + stem
     return f"{stem}_{next(counter)}__"
 
 
